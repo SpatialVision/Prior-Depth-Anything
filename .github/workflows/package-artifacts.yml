@@ -1,0 +1,51 @@
+name: Package Model Artifacts
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libopenblas-dev libomp-dev
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create checkpoints directory
+        run: |
+          mkdir -p checkpoints
+
+      - name: Download pretrained model weights from Hugging Face
+        run: |
+          wget -O checkpoints/depth_anything_v2_vitb.pth https://huggingface.co/Rain729/Prior-Depth-Anything/resolve/main/depth_anything_v2_vitb.pth
+          wget -O checkpoints/depth_anything_v2_vits.pth https://huggingface.co/Rain729/Prior-Depth-Anything/resolve/main/depth_anything_v2_vits.pth
+          wget -O checkpoints/prior_depth_anything_vitb.pth https://huggingface.co/Rain729/Prior-Depth-Anything/resolve/main/prior_depth_anything_vitb.pth
+          wget -O checkpoints/prior_depth_anything_vits.pth https://huggingface.co/Rain729/Prior-Depth-Anything/resolve/main/prior_depth_anything_vits.pth
+
+      - name: Remove .git and other unnecessary files
+        run: |
+          rm -rf .git
+
+      - name: Create artifact zip (code, requirements, checkpoints)
+        run: |
+          zip -r prior-depth-anything-artifacts.zip . -x "*.git*" "*.github*" "prior-depth-anything-artifacts.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prior-depth-anything-artifacts
+          path: prior-depth-anything-artifacts.zip
